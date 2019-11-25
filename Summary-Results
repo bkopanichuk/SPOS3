@@ -1,0 +1,11 @@
+Scheduling Type: Batch (Preemptive)
+Scheduling Name: Round Robin
+Simulation Run Time: 10500
+Mean: 2000
+Standard Deviation: 0
+Process #	CPU Time	IO Blocking	CPU Completed	CPU Blocked	Last arrival time (to check correct order)
+0		2000 (ms)	500 (ms)	2000 (ms)	7 times		2300
+1		2000 (ms)	500 (ms)	2000 (ms)	7 times		2000
+2		2000 (ms)	500 (ms)	2000 (ms)	7 times		2200
+3		2000 (ms)	500 (ms)	2000 (ms)	7 times		2400
+4		2000 (ms)	500 (ms)	2000 (ms)	7 times		2600
