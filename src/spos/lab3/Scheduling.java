@@ -17,6 +17,7 @@ public class Scheduling {
     private static int meanDev = 1000;
     private static int standardDev = 100;
     private static int runtime = 1000;
+    private static int quantumT = 500;
     private static Vector processVector = new Vector();
     private static Results result = new Results("null","null",0);
     private static String resultsFile = "Summary-Results";
@@ -78,6 +79,11 @@ public class Scheduling {
                     st.nextToken();
                     runtime = Common.s2i(st.nextToken());
                 }
+                if (line.startsWith("quantum")) {
+                    StringTokenizer st = new StringTokenizer(line);
+                    st.nextToken();
+                    quantumT = Common.s2i(st.nextToken());
+                }
             }
             in.close();
         } catch (IOException e) { /* Handle exceptions */ }
@@ -128,7 +134,7 @@ public class Scheduling {
                 i++;
             }
         }
-        result = SchedulingAlgorithm.Run(runtime, processVector, result);
+        result = SchedulingAlgorithm.Run(runtime, processVector, result, quantumT);
         try {
             //BufferedWriter out = new BufferedWriter(new FileWriter(resultsFile));
             PrintStream out = new PrintStream(new FileOutputStream(resultsFile));

@@ -8,12 +8,11 @@ import java.io.*;
 
 public class SchedulingAlgorithm {
 
-    public static Results Run(int runtime, Vector processVector, Results result) {
+    public static Results Run(int runtime, Vector processVector, Results result, int quantumT) {
         int i = 0;
         int comptime = 0;
         int size = processVector.size();
         int completed = 0;
-        int quantumT = 300;
         String resultsFile = "Summary-Processes";
 
         result.schedulingType = "Batch (Preemptive)";
