@@ -15,7 +15,7 @@ public class SchedulingAlgorithm {
         int completed = 0;
         String resultsFile = "Summary-Processes";
 
-        result.schedulingType = "Batch (Preemptive)";
+        result.schedulingType = "Static scheduling (clock-driven) (Preemptive)";
         result.schedulingName = "Round Robin";
         try {
             PrintStream out = new PrintStream(new FileOutputStream(resultsFile));
@@ -29,23 +29,41 @@ public class SchedulingAlgorithm {
                         if (process.arrivalTime <= quantumT) {
                             if (process.cputime > process.cpudone) {
                                 flag = false;
-                                out.println("Process: " + i + " registered... (" + process.cputime + " " + process.ioblocking + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
+                                out.println("Process: " + i + " registered... (" + process.cputime + " " + process.waitingTime + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
                                 if ((process.cputime - process.cpudone) > quantumT) {
-                                    comptime = comptime + quantumT; //if we want to use specific quantum time for each process, use process.ioblocking instead of quantumT
-                                    process.cpudone += quantumT;
-                                    process.arrivalTime += quantumT; //if we want to use specific waiting time for each process, use process.waiting instead of quantumT
-                                    out.println("Process: " + i + " I/O blocked... (" + process.cputime + " " + process.ioblocking + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
-                                    process.numblocked++;
+                                    if (process.timeBeforeBlocking > quantumT) {
+                                        comptime = comptime + quantumT;
+                                        process.cpudone += quantumT;
+                                        process.timeBeforeBlocking -= quantumT;
+                                        out.println("Process: " + i + " Quantum expiration... (" + process.cputime + " " + process.waitingTime + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
+                                        i--;
+                                    } else {
+                                        comptime = comptime + process.timeBeforeBlocking;
+                                        process.cpudone += process.timeBeforeBlocking;
+                                        process.arrivalTime = comptime + process.waitingTime;
+                                        process.timeBeforeBlocking = process.ioblocking;
+                                        out.println("Process: " + i + " I/O blocked... (" + process.cputime + " " + process.waitingTime + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
+                                        process.numblocked++;
+                                    }
                                 } else {
-                                    comptime += process.cputime - process.cpudone;
-                                    process.cpudone = process.cputime;
-                                    out.println("Process: " + i + " I/O blocked... (" + process.cputime + " " + process.ioblocking + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
-                                    process.numblocked++;
-                                    completed++;
-                                    if (completed == size) {
-                                        result.compuTime = comptime;
-                                        out.close();
-                                        return result;
+                                    if (process.timeBeforeBlocking >= (process.cputime - process.cpudone)) {
+                                        comptime += process.cputime - process.cpudone;
+                                        process.cpudone = process.cputime;
+                                        out.println("Process: " + i + " Burst time expiration... (" + process.cputime + " " + process.waitingTime + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
+                                        process.numblocked++;
+                                        completed++;
+                                        if (completed == size) {
+                                            result.compuTime = comptime;
+                                            out.close();
+                                            return result;
+                                        }
+                                    } else {
+                                        comptime = comptime + process.timeBeforeBlocking;
+                                        process.cpudone += process.timeBeforeBlocking;
+                                        process.arrivalTime = comptime + process.waitingTime;
+                                        process.timeBeforeBlocking = process.ioblocking;
+                                        out.println("Process: " + i + " I/O blocked... (" + process.cputime + " " + process.waitingTime + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
+                                        process.numblocked++;
                                     }
                                 }
                             }
@@ -55,23 +73,41 @@ public class SchedulingAlgorithm {
                                 if (processTmp.arrivalTime < process.arrivalTime) {
                                     if (processTmp.cputime > processTmp.cpudone) {
                                         flag = false;
-                                        out.println("Process: " + j + " registered... (" + processTmp.cputime + " " + processTmp.ioblocking + " " + processTmp.cpudone + " " + comptime + " " + processTmp.arrivalTime + ")");
+                                        out.println("Process: " + j + " registered... (" + processTmp.cputime + " " + processTmp.waitingTime + " " + processTmp.cpudone + " " + comptime + " " + processTmp.arrivalTime + ")");
                                         if ((processTmp.cputime - processTmp.cpudone) > quantumT) {
-                                            comptime = comptime + quantumT;
-                                            processTmp.cpudone += quantumT;
-                                            processTmp.arrivalTime += quantumT;
-                                            out.println("Process: " + j + " I/O blocked... (" + processTmp.cputime + " " + processTmp.ioblocking + " " + processTmp.cpudone + " " + comptime + " " + processTmp.arrivalTime + ")");
-                                            processTmp.numblocked++;
+                                            if (processTmp.timeBeforeBlocking > quantumT) {
+                                                comptime = comptime + quantumT;
+                                                processTmp.cpudone += quantumT;
+                                                processTmp.timeBeforeBlocking -= quantumT;
+                                                out.println("Process: " + j + " Quantum expiration... (" + processTmp.cputime + " " + processTmp.waitingTime + " " + processTmp.cpudone + " " + comptime + " " + processTmp.arrivalTime + ")");
+                                                j--;
+                                            } else {
+                                                comptime = comptime + processTmp.timeBeforeBlocking;
+                                                processTmp.cpudone += processTmp.timeBeforeBlocking;
+                                                processTmp.arrivalTime = comptime + processTmp.waitingTime;
+                                                processTmp.timeBeforeBlocking = processTmp.ioblocking;
+                                                out.println("Process: " + j + " I/O blocked... (" + processTmp.cputime + " " + processTmp.waitingTime + " " + processTmp.cpudone + " " + comptime + " " + processTmp.arrivalTime + ")");
+                                                processTmp.numblocked++;
+                                            }
                                         } else {
-                                            comptime += processTmp.cputime - processTmp.cpudone;
-                                            processTmp.cpudone = processTmp.cputime;
-                                            out.println("Process: " + j + " I/O blocked... (" + processTmp.cputime + " " + processTmp.ioblocking + " " + processTmp.cpudone + " " + comptime + " " + processTmp.arrivalTime + ")");
-                                            processTmp.numblocked++;
-                                            completed++;
-                                            if (completed == size) {
-                                                result.compuTime = comptime;
-                                                out.close();
-                                                return result;
+                                            if (processTmp.timeBeforeBlocking >= (processTmp.cputime - processTmp.cpudone)) {
+                                                comptime += processTmp.cputime - processTmp.cpudone;
+                                                processTmp.cpudone = processTmp.cputime;
+                                                out.println("Process: " + j + " Burst time expiration... (" + processTmp.cputime + " " + processTmp.waitingTime + " " + processTmp.cpudone + " " + comptime + " " + processTmp.arrivalTime + ")");
+                                                processTmp.numblocked++;
+                                                completed++;
+                                                if (completed == size) {
+                                                    result.compuTime = comptime;
+                                                    out.close();
+                                                    return result;
+                                                }
+                                            } else {
+                                                comptime = comptime + processTmp.timeBeforeBlocking;
+                                                processTmp.cpudone += processTmp.timeBeforeBlocking;
+                                                processTmp.arrivalTime = comptime + processTmp.waitingTime;
+                                                processTmp.timeBeforeBlocking = processTmp.ioblocking;
+                                                out.println("Process: " + j + " I/O blocked... (" + processTmp.cputime + " " + processTmp.waitingTime + " " + processTmp.cpudone + " " + comptime + " " + processTmp.arrivalTime + ")");
+                                                processTmp.numblocked++;
                                             }
                                         }
                                     }
@@ -80,23 +116,41 @@ public class SchedulingAlgorithm {
 
                             if (process.cputime > process.cpudone) {
                                 flag = false;
-                                out.println("Process: " + i + " registered... (" + process.cputime + " " + process.ioblocking + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
+                                out.println("Process: " + i + " registered... (" + process.cputime + " " + process.waitingTime + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
                                 if ((process.cputime - process.cpudone) > quantumT) {
-                                    comptime = comptime + quantumT;
-                                    process.cpudone += quantumT;
-                                    process.arrivalTime += quantumT;
-                                    out.println("Process: " + i + " I/O blocked... (" + process.cputime + " " + process.ioblocking + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
-                                    process.numblocked++;
+                                    if (process.timeBeforeBlocking > quantumT) {
+                                        comptime = comptime + quantumT;
+                                        process.cpudone += quantumT;
+                                        process.timeBeforeBlocking -= quantumT;
+                                        out.println("Process: " + i + " Quantum expiration... (" + process.cputime + " " + process.waitingTime + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
+                                        i--;
+                                    } else {
+                                        comptime = comptime + process.timeBeforeBlocking;
+                                        process.cpudone += process.timeBeforeBlocking;
+                                        process.arrivalTime = comptime + process.waitingTime;
+                                        process.timeBeforeBlocking = process.ioblocking;
+                                        out.println("Process: " + i + " I/O blocked... (" + process.cputime + " " + process.waitingTime + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
+                                        process.numblocked++;
+                                    }
                                 } else {
-                                    comptime += process.cputime - process.cpudone;
-                                    process.cpudone = process.cputime;
-                                    out.println("Process: " + i + " I/O blocked... (" + process.cputime + " " + process.ioblocking + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
-                                    process.numblocked++;
-                                    completed++;
-                                    if (completed == size) {
-                                        result.compuTime = comptime;
-                                        out.close();
-                                        return result;
+                                    if (process.timeBeforeBlocking >= (process.cputime - process.cpudone)) {
+                                        comptime += process.cputime - process.cpudone;
+                                        process.cpudone = process.cputime;
+                                        out.println("Process: " + i + " Burst time expiration... (" + process.cputime + " " + process.waitingTime + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
+                                        process.numblocked++;
+                                        completed++;
+                                        if (completed == size) {
+                                            result.compuTime = comptime;
+                                            out.close();
+                                            return result;
+                                        }
+                                    } else {
+                                        comptime = comptime + process.timeBeforeBlocking;
+                                        process.cpudone += process.timeBeforeBlocking;
+                                        process.arrivalTime = comptime + process.waitingTime;
+                                        process.timeBeforeBlocking = process.ioblocking;
+                                        out.println("Process: " + i + " I/O blocked... (" + process.cputime + " " + process.waitingTime + " " + process.cpudone + " " + comptime + " " + process.arrivalTime + ")");
+                                        process.numblocked++;
                                     }
                                 }
                             }
